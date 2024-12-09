@@ -1,14 +1,14 @@
 """Backend supported: tensorflow.compat.v1, tensorflow, pytorch, jax, paddle"""
 import deepxde as dde
 import numpy as np
-
+from deepxde.callbacks import LossWeightsDecay, LossWeightsDump
 # General parameters
 n = 2
 precision_train = 10
 precision_test = 30
-hard_constraint = True
+hard_constraint = False
 weights = 100  # if hard_constraint == False
-iterations = 5000
+iterations = 15000
 parameters = [1e-3, 3, 150, "sin"]
 
 # Define sine function
@@ -89,5 +89,11 @@ else:
     )
 
 
-losshistory, train_state = model.train(iterations=iterations)
+losshistory, train_state = model.train(
+    iterations=iterations, 
+    callbacks=[
+        LossWeightsDecay(periods=[2000, 2000], decay_rates=[1, 1]), 
+        LossWeightsDump(100)
+    ]
+)
 dde.saveplot(losshistory, train_state, issave=True, isplot=True)

@@ -592,3 +592,41 @@ class PDEPointResampler(Callback):
             raise ValueError(
                 "`num_bcs` changed! Please update the loss function by `model.compile`."
             )
+
+class LossWeightsDump(Callback):
+    """Dump the loss weights."""
+
+    def __init__(self, period=100):
+        super().__init__()
+        self.period = period
+        self.epochs_since_last_dump = 0
+
+    def on_epoch_end(self):
+        self.epochs_since_last_dump += 1
+        if self.epochs_since_last_dump < self.period:
+            return
+        self.epochs_since_last_dump = 0
+        print("Loss weights:", self.model.loss_weights)
+
+class LossWeightsDecay(Callback):
+    """Decay the loss weights every given period.
+
+    Args:
+        periods: List with the number of epochs between each decay for each loss weight.
+        decay_rates: List with the decay rates for each loss weight.
+    """
+
+    def __init__(self, periods, decay_rates):
+        super().__init__()
+        self.periods = periods
+        self.decay_rates = decay_rates
+        self.epochs_since_last_decay = [0] * len(periods)
+
+    def on_epoch_end(self):
+        for i in range(len(self.periods)):
+            self.epochs_since_last_decay[i] += 1
+            if self.epochs_since_last_decay[i] < self.periods[i]:
+                continue
+            self.epochs_since_last_decay[i] = 0
+            if self.model.loss_weights[i] is not None:
+                self.model.loss_weights[i] *= self.decay_rates[i]
